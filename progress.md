@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-03
-**Active Feature:** None — verification blocked pending Flutter SDK availability
+**Last Updated:** 2026-10-01
+**Active Feature:** None — WanderStamp rename verified; earlier Flutter baseline and map-test blockers resolved.
 
 ## What's Done
 
@@ -47,3 +47,26 @@
 ## Notes for Next Session
 
 Use this file with `session-handoff.md` as the durable resume point; do not rely on prior chat history.
+
+## 2026-10-01 — WanderStamp Repository Rename
+
+- Completed the `wanderstamp-rename` feature. The older sections above describe historical checks; the verification below supersedes their SDK and symlink blockers.
+- Updated `README.md`, `.github/workflows/deploy.yml`, and `web/{index.html,manifest.json,robots.txt,sitemap.xml}` for the new repository, Pages path, search metadata, and PWA name.
+- Renamed the Dart package to `wander_stamp` in `pubspec.yaml` and updated package imports across `test/` and `integration_test/`. Added `test/repository_branding_test.dart` to guard the deployment URLs and installed PWA name.
+- Updated display labels in the Android manifest, iOS/macOS Info.plist files, Linux window titles, and Windows window/resource labels. Updated the map client name in `lib/views/tracking_map_view.dart`.
+- Updated local Git origin to `https://github.com/LEO0331/WanderStamp.git`.
+- Preserved Firebase configuration, native application/bundle IDs, desktop executable names, tracking IDs, and the existing warmth-related copy. No new dependencies or abstractions were added.
+- `pubspec.lock` changed for four existing Flutter SDK-pinned transitive packages (`matcher`, `meta`, `test_api`, `vector_math`) during dependency resolution. The Flutter-generated analysis configuration change was reverted.
+
+Verification used `D:\Practice\flutter\bin\flutter.bat` with SDK/cache and process access:
+
+| Check | Result |
+|---|---|
+| `flutter pub get` | Passed |
+| `flutter analyze --no-pub` | Passed; no issues |
+| `flutter test --no-pub` | Passed; all 71 tests, including branding and map regressions |
+| `flutter build web --release --no-pub --base-href /WanderStamp/` | Passed |
+| Dart formatting check for the new test | Passed |
+| Manifest/sitemap parsing, unchanged Firebase/native IDs, `git diff --check` | Passed |
+
+Remaining risks: native platform builds and production Firebase integrations were not run; the live Pages deployment has not been triggered by this session. Existing PWA installations may need reinstalling after the site path changes. The local checkout folder remains `D:\Practice\WarmthFromAfar`.

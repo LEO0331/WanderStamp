@@ -32,7 +32,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --base-href "/WarmthFromAfar/"
+        run: flutter build web --release --base-href "/WanderStamp/"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

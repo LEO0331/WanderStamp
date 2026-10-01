@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warmth_from_afar/widgets/success_dialog.dart';
+import 'package:wander_stamp/widgets/success_dialog.dart';
 
 void main() {
   group('SuccessDialog Widget Tests', () {

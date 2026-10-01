@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:patrol/patrol.dart';
 import 'package:provider/provider.dart';
-import 'package:warmth_from_afar/main.dart';
-import 'package:warmth_from_afar/models/postcard.dart';
-import 'package:warmth_from_afar/providers/auth_provider.dart';
-import 'package:warmth_from_afar/services/firebase_service.dart';
+import 'package:wander_stamp/main.dart';
+import 'package:wander_stamp/models/postcard.dart';
+import 'package:wander_stamp/providers/auth_provider.dart';
+import 'package:wander_stamp/services/firebase_service.dart';
 
 class MockFirebaseService extends Mock implements FirebaseService {}
 

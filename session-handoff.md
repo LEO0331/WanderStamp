@@ -1,49 +1,33 @@
 # Session Handoff
 
-Use this only when work continues into another session. Keep it current enough that the next agent can resume without chat history.
-
 ## Current Objective
 
-- Goal: Remove the API-key-required overlay from the public tracking map.
-- Current status: Implemented; Flutter verification is blocked by Windows Developer Mode.
-- Branch / commit: `main` at deployment-trigger commit `4ec6f1d` (pushed to origin).
+- Goal: Align the renamed repository with WanderStamp.
+- Status: Complete and verified on 2026-10-01; changes remain local and uncommitted.
+- Local origin: `https://github.com/LEO0331/WanderStamp.git`.
 
-## Completed This Session
+## Completed
 
-- [x] Replaced Carto tiles with the public OpenStreetMap standard tile endpoint.
-- [x] Added a widget regression test for the configured tile URL.
-- [x] Pushed `4ec6f1d` to trigger the GitHub Pages workflow.
+- Updated deployment base path, README links/badge, web search/sharing metadata, sitemap, and PWA branding.
+- Renamed the Dart package to `wander_stamp` and migrated all test/integration imports.
+- Updated native display labels and map client branding while preserving Firebase and application identities.
+- Added two branding regression tests. Recorded full changed-file groups and evidence in `progress.md`.
+- Resolved the earlier baseline/map verification blockers; those tracker entries are now done.
 
-## Verification Evidence
+## Verification
 
-| Check | Command | Result | Notes |
-|---|---|---|---|
-| Map widget test | `flutter test test/views/tracking_map_view_test.dart` | Blocked | Flutter is at `D:\Practice\flutter`, but Windows Developer Mode is disabled and plugin symlinks cannot be created. |
-| Full gate | `flutter pub get && flutter analyze && flutter test && flutter build web` | Blocked | Same Windows symlink prerequisite. |
-| Deployment | GitHub Pages workflow after push `4ec6f1d` | Pending | Workflow runs from pushes to `main`. |
+- `flutter pub get`: passed.
+- `flutter analyze --no-pub`: passed, no issues.
+- `flutter test --no-pub`: passed, 71 tests.
+- `flutter build web --release --no-pub --base-href /WanderStamp/`: passed.
+- New-test formatting, JSON/XML validation, unchanged service/application IDs, and `git diff --check`: passed.
 
-## Files Changed
+Flutter was invoked from `D:\Practice\flutter\bin\flutter.bat` with SDK/cache and process access. Its current SDK required four existing SDK-pinned transitive package updates in `pubspec.lock`; no dependencies were added.
 
-- `lib/views/tracking_map_view.dart`
-- `test/views/tracking_map_view_test.dart`
-- `feature_list.json`
-- `progress.md`
+## Remaining Risks / Next Action
 
-## Decisions Made
-
-- Use OpenStreetMap standard tiles with visible OSM attribution to avoid a tile-provider API key.
-
-## Blockers / Risks
-
-- Windows Developer Mode is disabled, so Flutter cannot create the plugin symlinks needed to run the tests; `D:\Practice\flutter\bin` is also not on PATH.
-
-## Next Session Startup
-
-1. Read `AGENTS.md`.
-2. Read `feature_list.json` and `progress.md`.
-3. Review this handoff.
-4. Run `./init.sh` or the documented verification command before editing.
-
-## Recommended Next Step
-
-- Enable Developer Mode, add `D:\Practice\flutter\bin` to PATH, run `./init.sh`, then update both feature statuses to `done` if the checks pass.
+- Changes have not been committed, pushed, or deployed. Review the diff and deploy through the existing GitHub Pages workflow when ready.
+- Native builds and production Firebase integration were not tested.
+- Existing PWA installations may need reinstalling for the new site path.
+- The local checkout directory remains `D:\Practice\WarmthFromAfar`; this does not affect deployment.
+- Read `AGENTS.md`, `feature_list.json`, and `progress.md` before starting new work.

@@ -32,7 +32,7 @@ class WanderMap extends StatelessWidget {
           // Carto endpoint, this source does not require an API key.
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.leo.warmthfromafar',
+            userAgentPackageName: 'com.leo.wanderstamp',
             tileProvider: tileProvider,
           ),
 

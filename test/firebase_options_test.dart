@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warmth_from_afar/firebase_options.dart';
+import 'package:wander_stamp/firebase_options.dart';
 
 void main() {
   group('Firebase options', () {

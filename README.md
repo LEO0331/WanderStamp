@@ -1,12 +1,17 @@
 # 📮 WanderStamp
-[![Deploy to GitHub Pages](https://github.com/leo0331/WarmthFromAfar/actions/workflows/deploy.yml/badge.svg)](https://github.com/leo0331/WarmthFromAfar/actions/workflows/deploy.yml)
+[![Deploy to GitHub Pages](https://github.com/leo0331/WanderStamp/actions/workflows/deploy.yml/badge.svg)](https://github.com/leo0331/WanderStamp/actions/workflows/deploy.yml)
 
 > **"A handwritten postcard to bridge hearts—whether we are friends, acquaintances, or yet to meet."**
 
 WanderStamp is a warm Flutter Web application designed to connect travelers with people across the globe. The goal is simple: send postcard to anyone who needs a little bit of warmth, encouragement, or a travel story from afar. Spreading kindness and stories, one stamp at a time. 🌍✨
 
 ## 🌐 Live Demo
-[Check out the App here!](https://leo0331.github.io/WarmthFromAfar/)
+[Check out the App here!](https://leo0331.github.io/WanderStamp/)
+
+GitHub Pages builds with `--base-href "/WanderStamp/"`. The Dart package is
+`wander_stamp`, and installed app labels use **WanderStamp**. Firebase project
+IDs, native application/bundle IDs, and desktop executable names retain their
+original values so the rename preserves existing app and service identities.
 
 ## 🌟 Why I Built This?
 
@@ -100,21 +105,21 @@ The client initializes Firebase before rendering and uses `AuthProvider` for the
 ![Demo12](assets/screenshots/demo12.png)
 
 ## 🌍 How to Participate
-1.  **Request**: Visit the [Live Demo](https://leo0331.github.io/WarmthFromAfar/) and fill out the form.
-2.  **Confirm**: Once received, visit the [Arrival Page](https://leo0331.github.io/WarmthFromAfar/#/received) and enter your ID to share the joy!
+1.  **Request**: Visit the [Live Demo](https://leo0331.github.io/WanderStamp/) and fill out the form.
+2.  **Confirm**: Once received, visit the [Arrival Page](https://leo0331.github.io/WanderStamp/#/received) and enter your ID to share the joy!
 
 ## 📱 Install as a Mobile App (PWA)
 
 WanderStamp is a **Progressive Web App (PWA)**. You can install it on your phone without downloading from the App Store or Google Play.
 
 ### For Android (Chrome)
-1. Open the [Live Demo](https://leo0331.github.io/WarmthFromAfar/) in Chrome.
+1. Open the [Live Demo](https://leo0331.github.io/WanderStamp/) in Chrome.
 2. Tap the **three dots (⋮)** in the top-right corner.
 3. Select **"Install app"** or **"Add to Home screen"**.
 4. The **WanderStamp** icon will appear on your home screen!
 
 ### For iOS (Safari)
-1. Open the [Live Demo](https://leo0331.github.io/WarmthFromAfar/) in Safari.
+1. Open the [Live Demo](https://leo0331.github.io/WanderStamp/) in Safari.
 2. Tap the **Share** button (square with an up arrow) at the bottom.
 3. Scroll down and tap **"Add to Home Screen"**.
 4. Tap **Add** in the top-right corner.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warmth_from_afar/models/postcard.dart';
-import 'package:warmth_from_afar/widgets/wall_of_warmth.dart';
+import 'package:wander_stamp/models/postcard.dart';
+import 'package:wander_stamp/widgets/wall_of_warmth.dart';
 
 void main() {
   group('WallOfWarmth Widget Tests', () {

@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warmth_from_afar/main.dart';
-import 'package:warmth_from_afar/providers/auth_provider.dart';
-import 'package:warmth_from_afar/services/firebase_service.dart';
+import 'package:wander_stamp/main.dart';
+import 'package:wander_stamp/providers/auth_provider.dart';
+import 'package:wander_stamp/services/firebase_service.dart';
 
 class MockAuthProvider extends Mock implements AuthProvider {}
 

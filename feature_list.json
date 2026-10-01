@@ -5,16 +5,18 @@
       "name": "Establish Flutter verification baseline",
       "description": "Confirm dependencies, static analysis, automated tests, and the web build work from a clean project state.",
       "dependencies": [],
-      "status": "blocked",
-      "evidence": "Harness created 2026-09-02. Flutter SDK is at D:\\Practice\\flutter but is not on PATH. A direct test attempt reached dependency resolution, then Windows blocked plugin symlink creation because Developer Mode is disabled."
+      "status": "done",
+      "evidence": "Verified 2026-10-01 during WanderStamp rename: Flutter executed at D:\\Practice\\flutter\\bin\\flutter.bat with SDK/process access. Dependency resolution, zero-issue analysis, all 71 tests, and release web build passed. Earlier Windows symlink blocker did not recur."
     },
     {
       "id": "next-request",
       "name": "Restore public map tiles",
       "description": "Replace the map tile source that displays an API-key-required overlay with an attribution-compliant public tile source and cover the configuration with a widget test.",
-      "dependencies": ["baseline-verification"],
-      "status": "implemented-unverified",
-      "evidence": "Updated 2026-09-02 to https://tile.openstreetmap.org/{z}/{x}/{y}.png and added a regression test. A coverage run reached Flutter successfully but Windows blocked plugin symlink creation because Developer Mode is disabled, so the test suite and web build remain unverified."
+      "dependencies": [
+        "baseline-verification"
+      ],
+      "status": "done",
+      "evidence": "Verified 2026-10-01 during WanderStamp rename: full suite including tracking_map_view_test.dart passed (71 total tests), static analysis passed, and release web build passed. Live map/network behavior remains outside automated tests."
     },
     {
       "id": "architecture-diagram",
@@ -23,6 +25,14 @@
       "dependencies": [],
       "status": "done",
       "evidence": "Completed 2026-09-03. README now contains a Mermaid diagram reviewed against main.dart, auth_provider.dart, firebase_service.dart, firebase_options.dart, firebase.json, and pubspec.yaml."
+    },
+    {
+      "id": "wanderstamp-rename",
+      "name": "Align repository and application branding with WanderStamp",
+      "description": "Update deployment paths, documentation, web metadata, package imports, and app display names while preserving Firebase and native application identities.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Completed 2026-10-01. Updated README URLs/badge, Pages base-href, web SEO/PWA metadata, Dart package/imports, native display labels, map client name, and local origin URL. flutter pub get passed; flutter analyze --no-pub passed with no issues; flutter test --no-pub passed all 71 tests; flutter build web --release --no-pub --base-href /WanderStamp/ passed. Branding regression tests, JSON/XML checks, and git diff --check passed. No Firebase or native application identities changed. Current Flutter SDK required four existing SDK-pinned transitive dependency lockfile updates. Native builds, production integration, and live Pages deployment were not tested."
     }
   ]
 }

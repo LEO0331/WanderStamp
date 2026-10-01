@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:warmth_from_afar/views/tracking_map_view.dart';
-import 'package:warmth_from_afar/models/postcard.dart';
+import 'package:wander_stamp/views/tracking_map_view.dart';
+import 'package:wander_stamp/models/postcard.dart';
 
 class OfflineTileProvider extends TileProvider {
   @override

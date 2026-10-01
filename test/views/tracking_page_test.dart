@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warmth_from_afar/views/tracking_page.dart';
-import 'package:warmth_from_afar/services/firebase_service.dart';
-import 'package:warmth_from_afar/models/postcard.dart';
-import 'package:warmth_from_afar/widgets/postcard_card.dart';
+import 'package:wander_stamp/views/tracking_page.dart';
+import 'package:wander_stamp/services/firebase_service.dart';
+import 'package:wander_stamp/models/postcard.dart';
+import 'package:wander_stamp/widgets/postcard_card.dart';
 
 class MockFirebaseService extends Mock implements FirebaseService {}
 

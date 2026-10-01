@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:warmth_from_afar/providers/auth_provider.dart';
+import 'package:wander_stamp/providers/auth_provider.dart';
 
 void main() {
   group('AuthProvider Tests', () {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warmth_from_afar/views/request_page.dart';
-import 'package:warmth_from_afar/services/firebase_service.dart';
-import 'package:warmth_from_afar/widgets/success_dialog.dart';
+import 'package:wander_stamp/views/request_page.dart';
+import 'package:wander_stamp/services/firebase_service.dart';
+import 'package:wander_stamp/widgets/success_dialog.dart';
 
 class MockFirebaseService extends Mock implements FirebaseService {}
 
