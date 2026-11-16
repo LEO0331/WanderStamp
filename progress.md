@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-10-01
-**Active Feature:** None — WanderStamp rename verified; earlier Flutter baseline and map-test blockers resolved.
+**Last Updated:** 2026-11-16
+**Active Feature:** None. Security hardening is implemented and locally verified. See the latest entry for the production cutover.
 
 ## What's Done
 
@@ -70,3 +70,12 @@ Verification used `D:\Practice\flutter\bin\flutter.bat` with SDK/cache and proce
 | Manifest/sitemap parsing, unchanged Firebase/native IDs, `git diff --check` | Passed |
 
 Remaining risks: native platform builds and production Firebase integrations were not run; the live Pages deployment has not been triggered by this session. Existing PWA installations may need reinstalling after the site path changes. The local checkout folder remains `D:\Practice\WarmthFromAfar`.
+
+## 2026-11-16 — Security hardening
+
+- Split public tracking from private recipient data. Added restrictive Firestore Rules, backend-controlled writes, and a dry-run-first migration preserving public tracking codes.
+- Enforced the Firebase `admin` claim, introduced separate single-use arrival and feedback credentials, and preserved the original send timestamp on confirmation.
+- Added request validation, hourly rate limits, and optional App Check monitoring and enforcement. Rounded public GPS coordinates to a 0.25° grid.
+- Pinned Flutter and GitHub Actions and isolated Pages deployment permissions.
+- Verification passed for `flutter pub get`, `flutter analyze --no-pub`, all 66 Flutter tests, release Web build with the Pages base path, and all 11 tests against the local Firestore Emulator. `actionlint`, npm audit, and `git diff --check` also passed.
+- Firebase production configuration and data require a coordinated cutover before merging into `main`. Existing short codes still track postcards. The operator must send new private confirmation links to recipients who only have a legacy code. Native builds and live smoke tests remain unverified. See [the rollout runbook](docs/security-rollout.md).

@@ -33,6 +33,14 @@
       "dependencies": [],
       "status": "done",
       "evidence": "Completed 2026-10-01. Updated README URLs/badge, Pages base-href, web SEO/PWA metadata, Dart package/imports, native display labels, map client name, and local origin URL. flutter pub get passed; flutter analyze --no-pub passed with no issues; flutter test --no-pub passed all 71 tests; flutter build web --release --no-pub --base-href /WanderStamp/ passed. Branding regression tests, JSON/XML checks, and git diff --check passed. No Firebase or native application identities changed. Current Flutter SDK required four existing SDK-pinned transitive dependency lockfile updates. Native builds, production integration, and live Pages deployment were not tested."
+    },
+    {
+      "id": "security-hardening",
+      "name": "Harden Firestore, receipt confirmation, and Pages delivery",
+      "description": "Resolve the security audit findings while preserving the public tracking, request, and admin flows.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Verified 2026-11-16: flutter pub get, analyze, 66 Flutter tests, and release web build passed. Real Firestore Emulator and backend suite passed 11 tests; actionlint, npm audit, and git diff --check passed. Production Rules, Functions, data migration, App Check enforcement, and Pages deployment require the separate cutover in docs/security-rollout.md."
     }
   ]
 }

@@ -43,8 +43,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-*.keystore / *.jks
-service-account-key.json
+*.keystore
+*.jks
+key.properties
+*service-account*.json
+.env
+.env.*
+!.env.example
+!.env.sample
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 macos/Runner/GoogleService-Info.plist

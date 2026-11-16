@@ -59,6 +59,7 @@ class _RequestPageState extends State<RequestPage> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (_nameController.text.trim().isEmpty ||
         _addressController.text.trim().isEmpty ||
         _selectedTopic == null) {
@@ -70,17 +71,37 @@ class _RequestPageState extends State<RequestPage> {
       _showError("Please add your name for the gift postcard.");
       return;
     }
+    if (_nameController.text.trim().length > 120 ||
+        (_isGift && _giftFromController.text.trim().length > 120)) {
+      _showError("Please keep each name to 120 characters or fewer.");
+      return;
+    }
+    if (_addressController.text.trim().length > 600 ||
+        (_isGift && _giftMessageController.text.trim().length > 600)) {
+      _showError(
+        "Please keep each address or gift note to 600 characters or fewer.",
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
-    final String? newDocId = await FirebaseService().addRequest(
-      _nameController.text.trim(),
-      _addressController.text.trim(),
-      _selectedTopic!,
-      requestType: _isGift ? 'gift' : 'self',
-      giftFromName: _isGift ? _giftFromController.text.trim() : null,
-      giftMessage: _isGift ? _giftMessageController.text.trim() : null,
-      campaign: _selectedCampaign,
-    );
+    final String newDocId;
+    try {
+      newDocId = await FirebaseService().addRequest(
+        _nameController.text.trim(),
+        _addressController.text.trim(),
+        _selectedTopic!,
+        requestType: _isGift ? 'gift' : 'self',
+        giftFromName: _isGift ? _giftFromController.text.trim() : null,
+        giftMessage: _isGift ? _giftMessageController.text.trim() : null,
+        campaign: _selectedCampaign,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showError("We couldn't submit your request. Please try again later.");
+      return;
+    }
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
@@ -90,13 +111,13 @@ class _RequestPageState extends State<RequestPage> {
     showDialog(
       context: context,
       builder: (context) => SuccessDialog(
-        docId: newDocId ?? "TEMP",
+        docId: newDocId,
         onOpenTracking: () {
           Navigator.pop(context);
           Navigator.pushNamed(
             rootContext,
             '/',
-            arguments: {'initialTab': 1, 'initialTrackQuery': newDocId ?? ''},
+            arguments: {'initialTab': 1, 'initialTrackQuery': newDocId},
           );
         },
       ),

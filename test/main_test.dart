@@ -48,6 +48,7 @@ void main() {
           callOrder.add('firebase');
           return FakeFirebaseApp();
         },
+        initializeAppCheck: () async => callOrder.add('appCheck'),
         runAppFn: (Widget app) {
           callOrder.add('runApp');
           capturedRoot = app;
@@ -55,7 +56,7 @@ void main() {
         app: marker,
       );
 
-      expect(callOrder, ['ensure', 'firebase', 'runApp']);
+      expect(callOrder, ['ensure', 'firebase', 'appCheck', 'runApp']);
       expect(capturedRoot, isNotNull);
 
       await tester.pumpWidget(capturedRoot!);
@@ -116,6 +117,52 @@ void main() {
   });
 
   group('WanderStampApp Tests', () {
+    testWidgets('opens the initial private receipt route without writing', (
+      WidgetTester tester,
+    ) async {
+      const token = 'Abcdefghijklmnopqrstuvwxyz0123456789_-AbCde';
+      final platform = tester.binding.platformDispatcher;
+      platform.defaultRouteNameTestValue = '/received?token=$token';
+      addTearDown(platform.clearDefaultRouteNameTestValue);
+      when(
+        () => mockFirebaseService.confirmPostcard(token),
+      ).thenAnswer((_) async => 'test-feedback-token');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AuthProvider>.value(
+          value: mockAuthProvider,
+          child: const WanderStampApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      verifyNever(() => mockFirebaseService.confirmPostcard(any()));
+      await tester.tap(find.text('Confirm Arrival ❤️'));
+      await tester.pumpAndSettle();
+      verify(() => mockFirebaseService.confirmPostcard(token)).called(1);
+    });
+
+    testWidgets('opens a shared code in the public tracking tab', (
+      WidgetTester tester,
+    ) async {
+      final platform = tester.binding.platformDispatcher;
+      platform.defaultRouteNameTestValue = '/track?code=W-1234';
+      addTearDown(platform.clearDefaultRouteNameTestValue);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AuthProvider>.value(
+          value: mockAuthProvider,
+          child: const WanderStampApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1,
+      );
+      expect(find.text('W-1234'), findsOneWidget);
+      verifyNever(() => mockFirebaseService.confirmPostcard(any()));
+    });
+
     testWidgets('should render correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthProvider>.value(

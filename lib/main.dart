@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'app_check_bootstrap.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'views/received_confirmation_page.dart';
@@ -17,16 +18,18 @@ Future<void> bootstrapApp({
   EnsureInitializedFn ensureInitialized =
       WidgetsFlutterBinding.ensureInitialized,
   InitializeFirebaseFn initializeFirebase = Firebase.initializeApp,
+  Future<void> Function()? initializeAppCheck,
   RunAppFn runAppFn = runApp,
   Widget app = const WanderStampApp(),
 }) async {
   ensureInitialized();
   await initializeFirebase(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeAppCheck?.call();
   runAppFn(ChangeNotifierProvider(create: (_) => AuthProvider(), child: app));
 }
 
 void main() async {
-  await bootstrapApp();
+  await bootstrapApp(initializeAppCheck: setupAppCheck);
 }
 
 class WanderStampApp extends StatelessWidget {
@@ -40,12 +43,27 @@ class WanderStampApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.amber),
       initialRoute: '/',
       onGenerateRoute: (settings) {
-        if (settings.name == '/admin-login') {
+        final route = Uri.tryParse(settings.name ?? '');
+        if (route?.path == '/admin-login') {
           return MaterialPageRoute(builder: (_) => const AdminLoginPage());
         }
-        if (settings.name == '/received') {
+        if (route?.path == '/received') {
           return MaterialPageRoute(
-            builder: (_) => const ReceivedConfirmationPage(),
+            builder: (_) => ReceivedConfirmationPage(
+              receiptToken: route?.queryParameters['token'],
+              standalone: true,
+            ),
+          );
+        }
+        if (route?.path == '/track') {
+          final code = route?.queryParameters['code'] ?? '';
+          return MaterialPageRoute(
+            builder: (_) => MainNavigator(
+              initialIndex: 1,
+              initialTrackingQuery: RegExp(r'^W-[A-Z0-9]{4}$').hasMatch(code)
+                  ? code
+                  : '',
+            ),
           );
         }
 

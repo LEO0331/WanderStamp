@@ -25,13 +25,13 @@ In a world of instant messaging, the physical touch of a handwritten postcard is
 *   **✉️ Request a Postcard**: Anyone can pick a customized topic (Inspiration, Comfort, Heartbreak Healing, etc.) and submit their mailing address safely.
 *   **🛡️ Trust-first Onboarding**: Before sharing an address, users now see how it works, privacy promises, supported regions, and expected delivery window.
 *   **🎁 Gift Mode & Campaigns**: Request postcards for yourself or as a gift, and choose themed travel campaigns.
-*   **🎈 Surprise Success UI**: A smooth, animated feedback dialog providing a **unique 4-digit Warmth ID (W-XXXX)** for tracking.
+*   **🎈 Surprise Success UI**: An animated feedback dialog providing a **four-character Warmth ID (W-XXXX)** for public tracking.
 *   **📍 Public Tracker**: A real-time dashboard showing the journey of each postcard (pending ➔ sent ➔ received). 
 *   **🧭 Journey Timeline**: Public cards now show stage progress, queue position, ETA, and traveler notes.
 *   **📊 Topic Insights**: A live top-topic insights card showing which message topics are most requested.
 *   **🧱 Wall of Warmth**: Recipients can opt-in to share short feedback publicly after confirming arrival.
 *   **🔒 Secure Admin Dashboard**: A hidden entrance (activated by a secret gesture) for the traveler to manage requests and use **GPS-stamping** to mark postcards as sent.
-*   **❤️ Warmth Receipt**: Recipients can manually enter their **W-XXXX ID** on the site to mark the postcard as "Received" with a simple, heart-warming UI.
+*   **❤️ Warmth Receipt**: Recipients confirm arrival with a one-time receipt link from the sender and can opt in to sharing feedback.
 
 ## 🛠️ Tech Stack
 
@@ -65,25 +65,32 @@ flowchart TB
         AuthState --> AuthSDK[Firebase Auth SDK]
         DataAccess --> AuthSDK
         DataAccess --> FirestoreSDK[Cloud Firestore SDK]
+        DataAccess --> CallableSDK[Cloud Functions SDK]
         Components --> Maps[OpenStreetMap tiles]
     end
 
     subgraph Firebase[Firebase project]
         AuthSDK --> Auth[Firebase Authentication]
-        FirestoreSDK --> Postcards[(Firestore: postcards)]
-        Rules[Deployed Firestore security rules] -. enforce .-> Postcards
+        FirestoreSDK --> Postcards[(Private postcards)]
+        FirestoreSDK --> Tracking[(Public tracking)]
+        CallableSDK --> Functions[Cloud Functions]
+        Functions --> Postcards
+        Functions --> Tracking
+        Rules[Firestore security rules] -. enforce reads .-> Postcards
+        Rules -. enforce reads .-> Tracking
     end
 
     Postcards --> Restricted[Private fields\nrecipient name and address\nadmin access only]
     Postcards --> Public[Public status data\nstage, journey, topic, opt-in feedback]
 ```
 
-The client initializes Firebase before rendering and uses `AuthProvider` for the admin session. All postcard reads and writes pass through `FirebaseService`; public tracking, map, insights, and wall widgets consume the public-facing journey data, while shipping addresses are an admin-only concern enforced by deployed Firestore rules. Firestore rules are not versioned in this repository, so their deployed configuration must be reviewed separately when changing data access.
+The client initializes Firebase before rendering and uses `AuthProvider` for the admin session. Public tracking reads an allowlisted projection in `postcardTracking`. Recipient details and receipt credentials are in `postcards`, readable only by administrators under the included Firestore rules. Callable Functions validate writes and update both collections together. Follow the [Firebase rollout runbook](docs/security-rollout.md) before merging this data-model change into `main`.
 
 ## 🛡️ Security & Privacy
 
 *   **Address Protection**: Shipping addresses are **strictly hidden** from the public. Only the authenticated admin can access them.
-*   **Firestore Rules**: Database access is enforced via server-side security rules.
+*   **Firestore Rules**: Read access is enforced via server-side rules. The backend checks the Firebase `admin` claim for management operations.
+*   **Public Map**: Published coordinates are rounded to a 0.25° grid.
 *   **Minimal Data**: Only a nickname and address are required to participate.
 
 ## 📺 Demonstration
@@ -106,7 +113,7 @@ The client initializes Firebase before rendering and uses `AuthProvider` for the
 
 ## 🌍 How to Participate
 1.  **Request**: Visit the [Live Demo](https://leo0331.github.io/WanderStamp/) and fill out the form.
-2.  **Confirm**: Once received, visit the [Arrival Page](https://leo0331.github.io/WanderStamp/#/received) and enter your ID to share the joy!
+2.  **Confirm**: Once received, open the private link from the sender and select **Confirm Arrival**. You can also paste the receipt code into the [Arrival Page](https://leo0331.github.io/WanderStamp/#/received).
 
 ## 📱 Install as a Mobile App (PWA)
 

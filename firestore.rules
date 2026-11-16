@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /postcardTracking/{publicId} {
+      allow get, list: if true;
+    }
+
+    match /postcards/{postcardId} {
+      allow get, list: if request.auth != null
+        && request.auth.token.get('admin', false) == true;
+    }
+
+    // Writes and private bookkeeping are handled exclusively by the backend.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

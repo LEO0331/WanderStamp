@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Postcard {
   final String id;
+  final String? trackingCode;
+  final String? receiptToken;
   final String receiverName;
   final String address;
   final String topic;
@@ -27,6 +29,8 @@ class Postcard {
 
   Postcard({
     required this.id,
+    this.trackingCode,
+    this.receiptToken,
     required this.receiverName,
     required this.address,
     required this.topic,
@@ -50,6 +54,7 @@ class Postcard {
   });
 
   String get shortId {
+    if (trackingCode != null) return trackingCode!;
     if (id.length < 4) return id.toUpperCase();
     return id.substring(id.length - 4).toUpperCase();
   }
@@ -60,6 +65,8 @@ class Postcard {
     final data = (doc.data() as Map?) ?? {};
     return Postcard(
       id: doc.id,
+      trackingCode: data['trackingCode'],
+      receiptToken: data['receiptToken'],
       receiverName: data['receiverName'] ?? 'Anonymous',
       address: data['address'] ?? '',
       topic: data['topic'] ?? 'General',
