@@ -53,7 +53,9 @@ class WanderMap extends StatelessWidget {
 
           // 4. Display the required OpenStreetMap attribution.
           const RichAttributionWidget(
-            attributions: [TextSourceAttribution('© OpenStreetMap contributors')],
+            attributions: [
+              TextSourceAttribution('© OpenStreetMap contributors'),
+            ],
           ),
         ],
       ),
@@ -86,10 +88,6 @@ class WanderMap extends StatelessWidget {
 
   // 點擊標記顯示簡短資訊
   void _showPostcardInfo(BuildContext context, Postcard p) {
-    final String shortId = p.id.length >= 4
-        ? p.id.substring(p.id.length - 4).toUpperCase()
-        : p.id.toUpperCase();
-
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -105,7 +103,7 @@ class WanderMap extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                "ID: W-$shortId",
+                "ID: ${p.warmthId}",
                 style: const TextStyle(color: Color.fromARGB(255, 56, 54, 51)),
               ),
             ),

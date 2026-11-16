@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../models/postcard.dart';
@@ -22,7 +23,11 @@ class PostcardCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ExpansionTile(
         leading: _getStatusIcon(),
-        title: Text("To: ${postcard.receiverName}"),
+        title: Text(
+          !isAdminView && postcard.receiverName == 'Anonymous'
+              ? postcard.warmthId
+              : "To: ${postcard.receiverName}",
+        ),
         subtitle: Text(
           postcard.status == 'sent' && postcard.sentCity != null
               ? "From: ${postcard.sentCity}"
@@ -95,6 +100,16 @@ class PostcardCard extends StatelessWidget {
                   ),
                   if (postcard.status == 'sent') ...[
                     const SizedBox(height: 10),
+                    if (postcard.receiptToken case final receiptToken?)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.link),
+                          label: const Text("Copy Recipient Confirmation Link"),
+                          onPressed: () =>
+                              _copyReceiptLink(context, receiptToken),
+                        ),
+                      ),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -107,16 +122,20 @@ class PostcardCard extends StatelessWidget {
                           foregroundColor: Colors.pink,
                         ),
                         onPressed: () async {
-                          await FirebaseService().updateStatus(
-                            postcard.id,
-                            'received',
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Updated to Received ❤️"),
-                              ),
+                          try {
+                            await FirebaseService().updateStatus(
+                              postcard.id,
+                              'received',
                             );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Updated to Received ❤️"),
+                                ),
+                              );
+                            }
+                          } catch (_) {
+                            if (context.mounted) _showActionError(context);
                           }
                         },
                       ),
@@ -231,7 +250,34 @@ class PostcardCard extends StatelessWidget {
     return Colors.orange;
   }
 
+  Future<void> _copyReceiptLink(BuildContext context, String token) async {
+    const canonicalSite = 'https://leo0331.github.io/WanderStamp/';
+    final base = Uri.base;
+    final isLocal = base.host == 'localhost' || base.host == '127.0.0.1';
+    final site = base.scheme == 'https' || (base.scheme == 'http' && isLocal)
+        ? Uri(
+            scheme: base.scheme,
+            host: base.host,
+            port: base.port,
+            path: base.path,
+          )
+        : Uri.parse(canonicalSite);
+    final link = site.replace(fragment: '/received?token=$token');
+    try {
+      await Clipboard.setData(ClipboardData(text: link.toString()));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Link copied. Send it only to the recipient."),
+        ),
+      );
+    } catch (_) {
+      if (context.mounted) _showActionError(context);
+    }
+  }
+
   Future<void> _handleMarkAsSent(BuildContext context) async {
+    final Position position;
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -239,61 +285,70 @@ class PostcardCard extends StatelessWidget {
         if (permission == LocationPermission.denied) return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
+      position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
         ),
       ).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      if (context.mounted) await _updateWithoutLocation(context);
+      return;
+    }
 
-      // 預設城市名稱為經緯度，防止 Geocoding 失敗
-      String cityName =
-          "${position.latitude.toStringAsFixed(2)}, ${position.longitude.toStringAsFixed(2)}";
-
-      try {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        ).timeout(const Duration(seconds: 5)); // 增加超時保護
-
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          final locality = p.locality ?? "";
-          final country = p.country ?? "";
-          if (locality.isNotEmpty || country.isNotEmpty) {
-            cityName = "$locality, $country";
-          }
-        }
-      } catch (e) {
-        // Geocoding 失敗時，cityName 維持經緯度字串，不會報 Unexpected null value
-        debugPrint("Geocoding ignored: $e");
+    String? cityName;
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      ).timeout(const Duration(seconds: 5));
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        final label = [
+          placemark.locality,
+          placemark.country,
+        ].whereType<String>().where((part) => part.isNotEmpty).join(', ');
+        if (label.isNotEmpty) cityName = label;
       }
+    } catch (_) {
+      // A coarse map pin remains available when the city lookup fails.
+    }
 
+    try {
       await FirebaseService().updateStatusWithLocation(
         postcard.id,
         'sent',
-        lat: position.latitude,
-        lng: position.longitude,
+        lat: (position.latitude * 4).round() / 4,
+        lng: (position.longitude * 4).round() / 4,
         city: cityName,
       );
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Marked as sent from $cityName! 📮")),
+          SnackBar(
+            content: Text(
+              cityName == null
+                  ? "Marked as sent with an approximate location! 📮"
+                  : "Marked as sent from $cityName! 📮",
+            ),
+          ),
         );
       }
-    } catch (e) {
-      debugPrint("MarkAsSent Error: $e");
-      if (context.mounted) await _updateWithoutLocation(context);
+    } catch (_) {
+      if (context.mounted) _showActionError(context);
     }
   }
 
   Future<void> _updateWithoutLocation(BuildContext context) async {
-    await FirebaseService().updateStatus(postcard.id, 'sent');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Marked as sent (Location skipped).")),
-      );
+    try {
+      await FirebaseService().updateStatus(postcard.id, 'sent');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Marked as sent (Location skipped).")),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) _showActionError(context);
     }
   }
 
@@ -434,15 +489,18 @@ class _JourneyEditorDialogState extends State<_JourneyEditorDialog> {
         ElevatedButton(
           onPressed: () async {
             final eta = int.tryParse(_etaController.text.trim());
-            final navigator = Navigator.of(context);
-            await FirebaseService().updateJourneyProgress(
-              widget.postcard.id,
-              stage: _stage,
-              travelerNote: _noteController.text.trim(),
-              travelerPhotoUrl: _photoController.text.trim(),
-              etaDays: eta,
-            );
-            if (navigator.mounted) navigator.pop();
+            try {
+              await FirebaseService().updateJourneyProgress(
+                widget.postcard.id,
+                stage: _stage,
+                travelerNote: _noteController.text.trim(),
+                travelerPhotoUrl: _photoController.text.trim(),
+                etaDays: eta,
+              );
+              if (context.mounted) Navigator.pop(context);
+            } catch (_) {
+              if (context.mounted) _showActionError(context);
+            }
           },
           child: const Text("Save"),
         ),
@@ -467,13 +525,24 @@ void _confirmDelete(BuildContext context, String id) {
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
           onPressed: () async {
-            final navigator = Navigator.of(ctx);
-            await FirebaseService().deletePostcard(id);
-            if (navigator.mounted) navigator.pop();
+            try {
+              await FirebaseService().deletePostcard(id);
+              if (ctx.mounted) Navigator.pop(ctx);
+            } catch (_) {
+              if (ctx.mounted) _showActionError(ctx);
+            }
           },
           child: const Text("Delete Now"),
         ),
       ],
+    ),
+  );
+}
+
+void _showActionError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Could not complete the action. Please try again."),
     ),
   );
 }

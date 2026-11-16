@@ -84,10 +84,11 @@ class _TrackingPageState extends State<TrackingPage> {
       final String id = p.id.toUpperCase();
       final String query = _searchQuery.toUpperCase();
 
-      // 修正：支援暱稱搜尋或 ID 後四碼搜尋
+      final codeQuery = query.startsWith('W-') ? query.substring(2) : query;
       final matchesSearch =
           name.contains(query.toLowerCase()) ||
-          id.endsWith(query.replaceAll("W-", ""));
+          id == query ||
+          p.shortId.endsWith(codeQuery);
 
       if (_showOnlySentOrReceived) {
         return matchesSearch && (p.status == 'sent' || p.status == 'received');

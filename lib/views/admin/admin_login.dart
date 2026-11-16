@@ -12,6 +12,7 @@ class AdminLoginPage extends StatefulWidget {
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final _email = TextEditingController();
   final _pw = TextEditingController();
+  bool _isSigningIn = false;
 
   @override
   void dispose() {
@@ -21,17 +22,20 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   Future<void> _handleLogin() async {
+    setState(() => _isSigningIn = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final error = await auth.login(_email.text, _pw.text);
-    if (error == null && mounted) {
+    if (!mounted) return;
+    setState(() => _isSigningIn = false);
+    if (error == null && auth.isAdmin) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminDashboard()),
       );
-    } else if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error!)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to sign in as an administrator.')),
+      );
     }
   }
 
@@ -53,7 +57,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               decoration: const InputDecoration(labelText: "Password"),
             ),
             const SizedBox(height: 30),
-            ElevatedButton(onPressed: _handleLogin, child: const Text("Login")),
+            ElevatedButton(
+              onPressed: _isSigningIn ? null : _handleLogin,
+              child: const Text("Login"),
+            ),
           ],
         ),
       ),

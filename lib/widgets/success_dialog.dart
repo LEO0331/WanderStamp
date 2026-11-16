@@ -13,11 +13,15 @@ class SuccessDialog extends StatelessWidget {
     final String shortId = docId.length >= 4
         ? docId.substring(docId.length - 4).toUpperCase()
         : docId.toUpperCase();
-    final Uri base = Uri.base;
-    final bool isHttp = base.scheme == 'http' || base.scheme == 'https';
-    final String deepLink = isHttp
-        ? "${base.origin}${base.path}#/received?id=$docId"
-        : "#/received?id=$docId";
+    final base = Uri.base;
+    final isHttp = base.scheme == 'http' || base.scheme == 'https';
+    final trackingRoute = Uri(
+      path: '/track',
+      queryParameters: {'code': 'W-$shortId'},
+    );
+    final deepLink = isHttp
+        ? "${base.origin}${base.path}#$trackingRoute"
+        : "#$trackingRoute";
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),

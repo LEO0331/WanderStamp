@@ -14,6 +14,7 @@ class MockFirebaseService extends Mock implements FirebaseService {}
 class MockAuthProvider extends Mock implements AuthProvider {}
 
 void main() {
+  const receiptToken = 'Abcdefghijklmnopqrstuvwxyz0123456789_-AbCde';
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   late MockFirebaseService mockFirebaseService;
@@ -74,11 +75,8 @@ void main() {
       ),
     ).thenAnswer((_) async => 'request-id-1234');
     when(
-      () => mockFirebaseService.getPostcardByShortId(any()),
-    ).thenAnswer((_) async => postcards.first);
-    when(
-      () => mockFirebaseService.updateStatus(any(), any()),
-    ).thenAnswer((_) async {});
+      () => mockFirebaseService.confirmPostcard(receiptToken),
+    ).thenAnswer((_) async => 'test-feedback-token');
     when(
       () => mockFirebaseService.updateReceiptFeedback(
         any(),
@@ -118,16 +116,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Did you receive a postcard?'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField).first, '8A2C');
+    await tester.enterText(find.byType(TextField).first, receiptToken);
     await tester.tap(find.text('Confirm Arrival ❤️'));
     await tester.pumpAndSettle();
 
     expect(find.text('You made my day!'), findsOneWidget);
-    verify(() => mockFirebaseService.getPostcardByShortId('8A2C')).called(1);
-    verify(
-      () =>
-          mockFirebaseService.updateStatus('test-postcard-1-8A2C', 'received'),
-    ).called(1);
+    verify(() => mockFirebaseService.confirmPostcard(receiptToken)).called(1);
   });
 
   testWidgets('e2e: request flow shows required-field validation', (
@@ -232,11 +226,9 @@ void main() {
     expect(find.textContaining('Alice'), findsNothing);
   });
 
-  testWidgets('e2e: received flow rejects invalid short id', (tester) async {
-    when(
-      () => mockFirebaseService.getPostcardByShortId('ZZZZ'),
-    ).thenThrow(Exception('Not found'));
-
+  testWidgets('e2e: received flow rejects a public tracking code', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
@@ -244,14 +236,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Did you receive a postcard?'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField).first, 'ZZZZ');
+    await tester.enterText(find.byType(TextField).first, 'W-8A2C');
     await tester.tap(find.text('Confirm Arrival ❤️'));
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Postcard not found. Please check the ID.'),
+      find.text(
+        'Use your private receipt link or ask the sender for a new one.',
+      ),
       findsOneWidget,
     );
+    verifyNever(() => mockFirebaseService.confirmPostcard(any()));
   });
 
   testWidgets('e2e: success dialog actions copy, share, and open tracking', (

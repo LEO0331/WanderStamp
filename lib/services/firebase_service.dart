@@ -1,50 +1,47 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart'; // 加入用於 debugPrint
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/postcard.dart';
 
+typedef PostcardCallable =
+    Future<Object?> Function(String name, Map<String, Object?> data);
+
 class FirebaseService {
-  static FirebaseService _instance = FirebaseService._internal();
+  static FirebaseService? _instance;
 
   factory FirebaseService() {
-    return _instance;
+    return _instance ??= FirebaseService._(
+      FirebaseFirestore.instance,
+      _callFirebase,
+    );
   }
 
   final FirebaseFirestore _db;
-  final FirebaseAuth _auth;
+  final PostcardCallable _call;
 
-  FirebaseService._internal({FirebaseFirestore? firestore, FirebaseAuth? auth})
-    : _db = firestore ?? FirebaseFirestore.instance,
-      _auth = auth ?? FirebaseAuth.instance;
+  FirebaseService._(this._db, this._call);
+
+  static Future<Object?> _callFirebase(
+    String name,
+    Map<String, Object?> data,
+  ) async {
+    final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+    return (await functions.httpsCallable(name).call<Object?>(data)).data;
+  }
 
   @visibleForTesting
   factory FirebaseService.forTest({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  }) {
-    return FirebaseService._internal(firestore: firestore, auth: auth);
-  }
+    required FirebaseFirestore firestore,
+    required PostcardCallable call,
+  }) => FirebaseService._(firestore, call);
 
   @visibleForTesting
   static void setMockInstance(FirebaseService mock) {
     _instance = mock;
   }
 
-  // 1. [新增] 管理員手動刪除紀錄 (隱私清理)
-  Future<void> deletePostcard(String id) async {
-    // 安全檢查：確保只有登入的管理員可以執行
-    if (_auth.currentUser == null) return;
-
-    try {
-      await _db.collection('postcards').doc(id).delete();
-    } catch (e) {
-      debugPrint("Delete Error: $e");
-      rethrow;
-    }
-  }
-
-  // 2. 使用者提交請求 (回傳生成的 ID 用於顯示 W-XXXX 序號)
-  Future<String?> addRequest(
+  Future<String> addRequest(
     String name,
     String address,
     String topic, {
@@ -53,34 +50,35 @@ class FirebaseService {
     String? giftMessage,
     String? campaign,
   }) async {
-    DocumentReference docRef = await _db.collection('postcards').add({
-      'receiverName': name,
+    final result = await _call('submitPostcard', {
+      'name': name,
       'address': address,
       'topic': topic,
       'requestType': requestType,
       'giftFromName': giftFromName,
       'giftMessage': giftMessage,
       'campaign': campaign,
-      'status': 'pending',
-      'stage': 'requested',
-      'requestDate': FieldValue.serverTimestamp(),
     });
-    return docRef.id;
+    return (result as Map)['publicId'] as String;
   }
 
-  // 3. 監聽所有明信片進度 (公開，用於 Tracker 與 Chart)
-  Stream<List<Postcard>> getPublicPostcards() {
+  Stream<List<Postcard>> getPublicPostcards() =>
+      _watchPostcards('postcardTracking');
+
+  Stream<List<Postcard>> getAdminPostcards() => _watchPostcards('postcards');
+
+  Stream<List<Postcard>> _watchPostcards(String collection) {
     return _db
-        .collection('postcards')
+        .collection(collection)
         .orderBy('requestDate', descending: true)
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => Postcard.fromFirestore(doc)).toList(),
-        );
+        .map((snapshot) => snapshot.docs.map(Postcard.fromFirestore).toList());
   }
 
-  // 4. 管理員更新狀態 (含座標與城市)
+  Future<void> deletePostcard(String id) async {
+    await _call('managePostcard', {'id': id, 'action': 'delete'});
+  }
+
   Future<void> updateStatusWithLocation(
     String id,
     String newStatus, {
@@ -88,28 +86,18 @@ class FirebaseService {
     double? lng,
     String? city,
   }) async {
-    if (_auth.currentUser == null) return;
-
-    await _db.collection('postcards').doc(id).update({
+    await _call('managePostcard', {
+      'id': id,
+      'action': 'status',
       'status': newStatus,
-      'stage': newStatus == 'received' ? 'received' : 'sent',
-      'lat': lat,
-      'lng': lng,
-      'sentCity': city,
-      'sentDate': newStatus == 'sent' ? FieldValue.serverTimestamp() : null,
+      'lat': ?lat,
+      'lng': ?lng,
+      'city': ?city,
     });
   }
 
-  // 5. 基礎狀態更新 (用於收件人回報或無座標更新)
-  Future<void> updateStatus(String id, String newStatus) async {
-    // 注意：收件人回報時是不會登入的，所以這裡不檢查 currentUser
-    // 但如果是管理員手動更改，建議分開邏輯或在 Rules 層面控管
-    await _db.collection('postcards').doc(id).update({
-      'status': newStatus,
-      'stage': newStatus == 'received' ? 'received' : 'sent',
-      'sentDate': newStatus == 'sent' ? FieldValue.serverTimestamp() : null,
-    });
-  }
+  Future<void> updateStatus(String id, String newStatus) =>
+      updateStatusWithLocation(id, newStatus);
 
   Future<void> updateJourneyProgress(
     String id, {
@@ -118,64 +106,45 @@ class FirebaseService {
     String? travelerPhotoUrl,
     int? etaDays,
   }) async {
-    if (_auth.currentUser == null) return;
-
-    final Map<String, dynamic> payload = {};
-    if (stage != null) {
-      payload['stage'] = stage;
-      if (stage == 'sent') payload['status'] = 'sent';
-      if (stage == 'received') payload['status'] = 'received';
+    if (stage == null &&
+        travelerNote == null &&
+        travelerPhotoUrl == null &&
+        etaDays == null) {
+      return;
     }
-    if (travelerNote != null) payload['travelerNote'] = travelerNote;
-    if (travelerPhotoUrl != null) {
-      payload['travelerPhotoUrl'] = travelerPhotoUrl;
-    }
-    if (etaDays != null) payload['etaDays'] = etaDays;
 
-    if (payload.isEmpty) return;
-    await _db.collection('postcards').doc(id).update(payload);
+    await _call('managePostcard', {
+      'id': id,
+      'action': 'progress',
+      'stage': ?stage,
+      'travelerNote': ?travelerNote,
+      'travelerPhotoUrl': ?travelerPhotoUrl,
+      'etaDays': ?etaDays,
+    });
+  }
+
+  Future<String> confirmPostcard(String token) async {
+    final result = await _call('confirmPostcard', {'token': token});
+    return (result as Map)['feedbackToken'] as String;
   }
 
   Future<void> updateReceiptFeedback(
-    String id, {
+    String token, {
     required String reaction,
     required String message,
     required bool showOnWall,
   }) async {
-    await _db.collection('postcards').doc(id).update({
-      'recipientReaction': reaction,
-      'recipientMessage': message,
+    await _call('submitPostcardFeedback', {
+      'token': token,
+      'reaction': reaction,
+      'message': message,
       'showOnWall': showOnWall,
     });
   }
 
-  // 保留：舊版標記寄出方法 (相容性用)
-  Future<void> markAsSent(
-    String id, {
-    required double lat,
-    required double lng,
-    required String city,
-  }) async {
-    await updateStatusWithLocation(id, 'sent', lat: lat, lng: lng, city: city);
-  }
-
-  // 6. 搜尋特定短 ID 的明信片
-  Future<Postcard?> getPostcardByShortId(String shortId) async {
-    final query = shortId.toUpperCase();
-    final snapshot = await _db.collection('postcards').get();
-    try {
-      final doc = snapshot.docs.firstWhere(
-        (d) => d.id.toUpperCase().endsWith(query),
-      );
-      return Postcard.fromFirestore(doc);
-    } catch (e) {
-      return null;
-    }
-  }
-
   Future<Map<String, int>> getTopicStats() async {
-    final snapshot = await _db.collection('postcards').get();
-    final Map<String, int> result = {};
+    final snapshot = await _db.collection('postcardTracking').get();
+    final result = <String, int>{};
     for (final doc in snapshot.docs) {
       final topic = (doc.data()['topic'] as String?) ?? 'General';
       result[topic] = (result[topic] ?? 0) + 1;

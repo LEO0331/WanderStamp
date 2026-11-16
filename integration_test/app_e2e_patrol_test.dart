@@ -13,6 +13,7 @@ class MockFirebaseService extends Mock implements FirebaseService {}
 class MockAuthProvider extends Mock implements AuthProvider {}
 
 void main() {
+  const receiptToken = 'Abcdefghijklmnopqrstuvwxyz0123456789_-AbCde';
   PatrolBinding.ensureInitialized(NativeAutomatorConfig());
 
   late MockFirebaseService mockFirebaseService;
@@ -73,11 +74,8 @@ void main() {
       ),
     ).thenAnswer((_) async => 'request-id-1234');
     when(
-      () => mockFirebaseService.getPostcardByShortId(any()),
-    ).thenAnswer((_) async => postcards.first);
-    when(
-      () => mockFirebaseService.updateStatus(any(), any()),
-    ).thenAnswer((_) async {});
+      () => mockFirebaseService.confirmPostcard(receiptToken),
+    ).thenAnswer((_) async => 'test-feedback-token');
     when(
       () => mockFirebaseService.updateReceiptFeedback(
         any(),
@@ -116,16 +114,12 @@ void main() {
     await $.pumpAndSettle();
     expect(find.text('Did you receive a postcard?'), findsOneWidget);
 
-    await $(TextField).first.enterText('8A2C');
+    await $(TextField).first.enterText(receiptToken);
     await $('Confirm Arrival ❤️').tap();
     await $.pumpAndSettle();
 
     expect(find.text('You made my day!'), findsOneWidget);
-    verify(() => mockFirebaseService.getPostcardByShortId('8A2C')).called(1);
-    verify(
-      () =>
-          mockFirebaseService.updateStatus('test-postcard-1-8A2C', 'received'),
-    ).called(1);
+    verify(() => mockFirebaseService.confirmPostcard(receiptToken)).called(1);
   });
 
   patrolTest('e2e: request success opens tracking (mobile patrol)', ($) async {

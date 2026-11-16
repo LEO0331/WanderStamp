@@ -10,6 +10,56 @@ class AdminDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!context.select((AuthProvider auth) => auth.isAdmin)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Admin Dashboard")),
+        body: Center(
+          child: TextButton(
+            onPressed: () =>
+                Navigator.pushReplacementNamed(context, '/admin-login'),
+            child: const Text("Sign in as administrator"),
+          ),
+        ),
+      );
+    }
+    return const _AuthorizedDashboard();
+  }
+}
+
+class _AuthorizedDashboard extends StatefulWidget {
+  const _AuthorizedDashboard();
+
+  @override
+  State<_AuthorizedDashboard> createState() => _AuthorizedDashboardState();
+}
+
+class _AuthorizedDashboardState extends State<_AuthorizedDashboard> {
+  late final _postcards = FirebaseService().getAdminPostcards();
+
+  Future<void> _logout() async {
+    final auth = context.read<AuthProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await auth.logout();
+      if (navigator.mounted) {
+        navigator.pushNamedAndRemoveUntil('/', (route) => false);
+      }
+      if (messenger.mounted) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Logged out safely")),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Could not log out. Please try again.")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Admin Dashboard"),
@@ -17,27 +67,16 @@ class AdminDashboard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: "Logout",
-            onPressed: () async {
-              // 1. 執行登出
-              await Provider.of<AuthProvider>(context, listen: false).logout();
-              // 2. 跳回首頁並清空路由堆疊
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Logged out safely")),
-                );
-              }
-            },
+            onPressed: _logout,
           ),
         ],
       ),
       body: StreamBuilder<List<Postcard>>(
-        stream: FirebaseService().getPublicPostcards(), // 管理員看同一個 Stream 但顯示更多
+        stream: _postcards,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Could not load requests."));
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }

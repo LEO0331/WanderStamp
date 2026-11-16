@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wander_stamp/widgets/success_dialog.dart';
 
@@ -71,9 +72,20 @@ void main() {
       expect(find.text("Share"), findsOneWidget);
     });
 
-    testWidgets('copy and share actions show snackbars', (
+    testWidgets('Share copies only the public tracking route and code', (
       WidgetTester tester,
     ) async {
+      String? copiedText;
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copiedText = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(body: SuccessDialog(docId: 'test-doc-id-5678')),
@@ -81,11 +93,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text("Copy ID"));
-      await tester.pumpAndSettle();
-
       await tester.tap(find.text("Share"));
       await tester.pumpAndSettle();
+      expect(Uri.parse(copiedText!).fragment, '/track?code=W-5678');
     });
 
     testWidgets('uses custom open tracking callback when provided', (

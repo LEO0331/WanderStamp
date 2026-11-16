@@ -44,6 +44,8 @@ void main() {
         .setMockMethodCallHandler(geocodingChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(geolocatorChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
   Future<void> pumpCard(
@@ -209,6 +211,45 @@ void main() {
       expect(find.text("W-AB"), findsOneWidget);
     });
 
+    testWidgets('only the sent admin card can copy a recipient link', (
+      tester,
+    ) async {
+      final token = List.filled(43, 'A').join();
+      final postcard = Postcard(
+        id: 'test-record-1234',
+        receiverName: 'Test recipient',
+        address: '',
+        topic: 'Snow',
+        status: 'sent',
+        receiptToken: token,
+      );
+      String? clipboardText;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData') {
+              clipboardText = call.arguments['text'] as String;
+            }
+            return null;
+          });
+      const copyLabel = 'Copy Recipient Confirmation Link';
+
+      await pumpCard(tester, postcard);
+      await tester.tap(find.text('To: Test recipient'));
+      await tester.pumpAndSettle();
+      expect(find.text(copyLabel), findsNothing);
+
+      await pumpCard(tester, postcard, admin: true);
+      if (find.text(copyLabel).evaluate().isEmpty) {
+        await tester.tap(find.text('To: Test recipient'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text(copyLabel));
+      await tester.pumpAndSettle();
+
+      expect(Uri.parse(clipboardText!).fragment, '/received?token=$token');
+      expect(clipboardText, isNot(contains(postcard.id)));
+    });
+
     testWidgets('admin locate & send falls back without location plugin', (
       tester,
     ) async {
@@ -242,8 +283,8 @@ void main() {
                   return 2; // whileInUse
                 case 'getCurrentPosition':
                   return {
-                    'latitude': 35.0,
-                    'longitude': 139.0,
+                    'latitude': 35.06,
+                    'longitude': 138.95,
                     'timestamp': DateTime(
                       2026,
                       1,
@@ -291,7 +332,7 @@ void main() {
             'sent',
             lat: 35.0,
             lng: 139.0,
-            city: '35.00, 139.00',
+            city: null,
           ),
         ).called(1);
       },
